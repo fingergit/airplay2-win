@@ -348,3 +348,6 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/airplay2-win/demo.h264
+/airplay2-win/demo.len
+/airplay2-win/demo.source
