@@ -446,7 +446,12 @@
     <ClCompile Include="lib\ed25519\sign.c" />
     <ClCompile Include="lib\ed25519\verify.c" />
     <ClCompile Include="lib\fairplay_playfair.c" />
-    <ClCompile Include="lib\fdk-aac\aac-enc.c" />
+    <ClCompile Include="lib\fdk-aac\aac-enc.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="lib\fdk-aac\libAACdec\src\aacdecoder.cpp" />
     <ClCompile Include="lib\fdk-aac\libAACdec\src\aacdecoder_lib.cpp" />
     <ClCompile Include="lib\fdk-aac\libAACdec\src\aacdec_drc.cpp" />

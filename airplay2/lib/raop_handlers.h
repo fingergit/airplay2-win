@@ -21,6 +21,8 @@
 typedef void (*raop_handler_t)(raop_conn_t *, http_request_t *,
                                http_response_t *, char **, int *);
 
+static int setup_step = 0;
+
 static void
 raop_handler_info(raop_conn_t *conn,
 					   http_request_t *request, http_response_t *response,
@@ -133,6 +135,7 @@ raop_handler_pairverify(raop_conn_t *conn,
 	const unsigned char *data;
 	int datalen;
 
+	setup_step = 0; // reset setup_step.
 	data = (unsigned char *) http_request_get_data(request, &datalen);
 	if (datalen < 4) {
 		logger_log(conn->raop->logger, LOGGER_ERR, "Invalid pair-verify data");
@@ -225,8 +228,6 @@ raop_handler_options(raop_conn_t *conn,
 	http_response_add_header(response, "Public", "SETUP, RECORD, PAUSE, FLUSH, TEARDOWN, OPTIONS, GET_PARAMETER, SET_PARAMETER");
 }
 
-static int setup = 0;
-
 static void
 raop_handler_setup(raop_conn_t *conn,
                    http_request_t *request, http_response_t *response,
@@ -270,12 +271,52 @@ raop_handler_setup(raop_conn_t *conn,
     plist_t root_node = NULL;
     plist_from_bin(data, datalen, &root_node);
     plist_t streams_note = plist_dict_get_item(root_node, "streams");
-    if (setup == 0) {
+    if (setup_step == 0) {
 		unsigned char aesiv[16];
 		unsigned char aeskey[16];
-        setup++;
+		setup_step++;
         logger_log(conn->raop->logger, LOGGER_DEBUG, "SETUP 1");
         // 第一次setup
+		/*
+<plist version="1.0">
+<dict>
+	<key>et</key>
+	<integer>32</integer>
+	<key>eiv</key>
+	<data>
+		Bp5tRB8BOW/MWVJSGzALLw==
+	</data>
+	<key>timingProtocol</key>
+	<string>NTP</string>
+	<key>sessionUUID</key>
+	<string>43C10532-7CBC-419E-9BB3-528F7D6F9AE0</string>
+	<key>osName</key>
+	<string>iPhone OS</string>
+	<key>osBuildVersion</key>
+	<string>16A404</string>
+	<key>sourceVersion</key>
+	<string>371.4.7</string>
+	<key>timingPort</key>
+	<integer>60373</integer>
+	<key>isScreenMirroringSession</key>
+	<true/>
+	<key>osVersion</key>
+	<string>12.0.1</string>
+	<key>ekey</key>
+	<data>
+		RlBMWQECAQAAAAA8AAAAALFuVD0C1qvRjZI5wtJY4v0AAAAQd5dKdzn2dNJ2ysNpS4VjnfmFHlRqEnXFqUeXzEtMDLIdF/5Y
+	</data>
+	<key>deviceID</key>
+	<string>DC:0C:5C:B7:D6:DA</string>
+	<key>model</key>
+	<string>iPhone9,1</string>
+	<key>name</key>
+	<string>xxx的 iPhone</string>
+	<key>macAddress</key>
+	<string>DC:0C:5C:B7:D6:D8</string>
+</dict>
+</plist>
+		*/
         plist_t eiv_note = plist_dict_get_item(root_node, "eiv");
         char* eiv= NULL;
         uint64_t eiv_len = 0;
@@ -299,27 +340,68 @@ raop_handler_setup(raop_conn_t *conn,
         pairing_get_ecdh_secret_key(conn->pairing, ecdh_secret);
         conn->raop_rtp = raop_rtp_init(conn->raop->logger, &conn->raop->callbacks, conn->remote, conn->remotelen, aeskey, aesiv, ecdh_secret, timing_rport);
 		conn->raop_rtp_mirror = raop_rtp_mirror_init(conn->raop->logger, &conn->raop->callbacks, conn->remote, conn->remotelen, aeskey, ecdh_secret, timing_rport);
-    } else if (setup == 1) {
+    } else if (setup_step == 1) {
 		unsigned short tport=0, dport=0;
-        setup++;
+		setup_step++;
         logger_log(conn->raop->logger, LOGGER_DEBUG, "SETUP 2");
+		/*
+<plist version="1.0">
+<dict>
+	<key>streams</key>
+	<array>
+		<dict>
+			<key>type</key>
+			<integer>110</integer>
+			<key>timestampInfo</key>
+			<array>
+				<dict>
+					<key>name</key>
+					<string>SubSu</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>BePxT</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>AfPxT</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>BefEn</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>EmEnc</string>
+				</dict>
+			</array>
+			<key>streamConnectionID</key>
+			<integer>4964383553955644435</integer>
+		</dict>
+	</array>
+</dict>
+</plist>
+		*/
 		plist_t stream_note = plist_array_get_item(streams_note, 0);
 		plist_t type_note = plist_dict_get_item(stream_note, "type");
-        uint64_t type;
-        plist_get_uint_val(type_note, &type);
-        logger_log(conn->raop->logger, LOGGER_DEBUG, "type = %llu", type);
+		if (type_note != NULL) {
+			uint64_t type;
+			plist_get_uint_val(type_note, &type);
+			logger_log(conn->raop->logger, LOGGER_DEBUG, "type = %llu", type);
+		}
 		plist_t stream_id_note = plist_dict_get_item(stream_note, "streamConnectionID");
-		uint64_t streamConnectionID;
-		plist_get_uint_val(stream_id_note, &streamConnectionID);
-        logger_log(conn->raop->logger, LOGGER_DEBUG, "streamConnectionID = %llu", streamConnectionID);
-
+		uint64_t streamConnectionID = 0;
+		if (stream_id_note != NULL) {
+			plist_get_uint_val(stream_id_note, &streamConnectionID);
+			logger_log(conn->raop->logger, LOGGER_DEBUG, "streamConnectionID = %llu", streamConnectionID);
+		}
 
         if (conn->raop_rtp_mirror) {
 			raop_rtp_init_mirror_aes(conn->raop_rtp_mirror, streamConnectionID);
 			raop_rtp_start_mirror(conn->raop_rtp_mirror, use_udp, remote_tport, &tport, &dport);
             logger_log(conn->raop->logger, LOGGER_DEBUG, "RAOP initialized success");
         } else {
-            logger_log(conn->raop->logger, LOGGER_ERR, "RAOP not initialized at SETUP, playing will fail!");
+            logger_log(conn->raop->logger, LOGGER_ERR, "RAOP not initialized at SETUP, playing will fail! [Setup2: raop_rtp_mirror is NULL]");
             http_response_set_disconnect(response, 1);
         }
         plist_t r_node = plist_new_dict();
@@ -352,9 +434,29 @@ raop_handler_setup(raop_conn_t *conn,
             raop_rtp_start_audio(conn->raop_rtp, use_udp, remote_cport, remote_tport, &cport, &tport, &dport);
             logger_log(conn->raop->logger, LOGGER_DEBUG, "RAOP initialized success");
         } else {
-            logger_log(conn->raop->logger, LOGGER_ERR, "RAOP not initialized at SETUP, playing will fail!");
+            logger_log(conn->raop->logger, LOGGER_ERR, "RAOP not initialized at SETUP, playing will fail![Setup3: raop_rtp is NULL]");
             http_response_set_disconnect(response, 1);
         }
+        // 需要返回端口
+//		/**
+//		 * <dict>
+//	<key>streams</key>
+//	<array>
+//		<dict>
+//			<key>dataPort</key>
+//			<integer>42820</integer>
+//			<key>controlPort</key>
+//			<integer>46440</integer>
+//			<key>type</key>
+//			<integer>96</integer>
+//		</dict>
+//	</array>
+//
+//	<key>timingPort</key>
+//	<integer>46440</integer>
+//</dict>
+//</plist>
+//		 */
 		plist_t r_node = plist_new_dict();
 		plist_t s_node = plist_new_array();
 		plist_t s_sub_node = plist_new_dict();

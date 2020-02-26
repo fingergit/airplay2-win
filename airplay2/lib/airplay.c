@@ -483,3 +483,15 @@ void airplay_stop(airplay_t *airplay)
 	httpd_stop(airplay->httpd);
 	httpd_stop(airplay->mirror_server);
 }
+
+void airplay_destroy(airplay_t* airplay) {
+	if (airplay) {
+		airplay_stop(airplay);
+		httpd_destroy(airplay->httpd);
+		logger_destroy(airplay->logger);
+		free(airplay);
+
+		/* Cleanup the network */
+		netutils_cleanup();
+	}
+}

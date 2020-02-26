@@ -512,14 +512,21 @@ raop_rtp_thread_udp(void *arg)
                 const void *audiobuf;
                 int audiobuflen;
                 unsigned int pts;
+                uint32_t sample_rate = 0;
+                uint16_t channels = 0;
+                uint16_t bits_per_sample = 0;
+
                 buf_ret = raop_buffer_queue(raop_rtp->buffer, packet, packetlen, &raop_rtp->callbacks);
                 assert(buf_ret >= 0);
                 /* Decode all frames in queue */
-                while ((audiobuf = raop_buffer_dequeue(raop_rtp->buffer, &audiobuflen, &pts, no_resend))) {
+                while ((audiobuf = raop_buffer_dequeue(raop_rtp->buffer, &audiobuflen, &pts, no_resend, &sample_rate, &channels, &bits_per_sample))) {
                     pcm_data_struct pcm_data;
                     pcm_data.data_len = 960;
                     pcm_data.data = audiobuf;
                     pcm_data.pts = pts;
+                    pcm_data.sample_rate = sample_rate;
+                    pcm_data.channels = channels;
+                    pcm_data.bits_per_sample = bits_per_sample;
                     raop_rtp->callbacks.audio_process(raop_rtp->callbacks.cls, &pcm_data);
                 }
                 /* Handle possible resend requests */

@@ -21,5 +21,8 @@ typedef struct {
     unsigned short *data;
     int data_len;
     unsigned int pts;
+    uint32_t sample_rate;
+    uint16_t channels;
+    uint16_t bits_per_sample;
 } pcm_data_struct;
 #endif //AIRPLAYSERVER_STREAM_H

@@ -350,6 +350,19 @@ raop_set_log_callback(raop_t *raop, raop_log_callback_t callback, void *cls)
 	logger_set_callback(raop->logger, callback, cls);
 }
 
+void raop_log(raop_t* raop, int level, const char* fmt, ...)
+{
+	static char buffer[4096];
+	va_list ap;
+
+	buffer[sizeof(buffer) - 1] = '\0';
+	va_start(ap, fmt);
+	vsnprintf(buffer, sizeof(buffer) - 1, fmt, ap);
+	va_end(ap);
+
+	logger_log(raop->logger, level, buffer);
+}
+
 int
 raop_start(raop_t *raop, unsigned short *port)
 {

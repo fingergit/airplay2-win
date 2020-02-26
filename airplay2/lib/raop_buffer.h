@@ -28,7 +28,8 @@ raop_buffer_t *raop_buffer_init(logger_t *logger,
 								const unsigned char *ecdh_secret);
 
 int raop_buffer_queue(raop_buffer_t *raop_buffer, unsigned char *data, unsigned short datalen, raop_callbacks_t *callbacks);
-const void *raop_buffer_dequeue(raop_buffer_t *raop_buffer, int *length, unsigned int* pts, int no_resend);
+const void *raop_buffer_dequeue(raop_buffer_t *raop_buffer, int *length, unsigned int* pts, int no_resend, 
+    uint32_t* sample_rate, uint16_t* channels, uint16_t* bits_per_sample);
 void raop_buffer_handle_resends(raop_buffer_t *raop_buffer, raop_resend_cb_t resend_cb, void *opaque);
 void raop_buffer_flush(raop_buffer_t *raop_buffer, int next_seq);
 void raop_buffer_destroy(raop_buffer_t *raop_buffer);
