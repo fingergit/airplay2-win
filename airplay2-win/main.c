@@ -165,7 +165,7 @@ audio_process(void* cls, pcm_data_struct* data)
 
 //	assert(device);
 
-	printf("Got %d bytes of audio\n", data->data_len);
+	printf("Got %d bytes of audio.[%ul, %u, %u, %u]\n", data->data_len, data->pts, data->sample_rate, data->channels, data->bits_per_sample);
 //	ao_play(device, (char *)buffer, buflen);
 }
 
@@ -197,7 +197,7 @@ audio_destroy(void* cls, void* session)
 static void
 video_process(void* cls, h264_decode_struct * data)
 {
-	printf("Receive video data\n");
+	printf("Receive video data.[%ul]\n", data->pts);
 }
 
 static void

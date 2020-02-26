@@ -40,17 +40,7 @@ typedef HANDLE cond_handle_t;
 #define COND_SIGNAL(handle) if (handle != NULL) { SetEvent(handle); }
 #define COND_DESTROY(handle) if (handle != NULL) { CloseHandle(handle); handle = NULL;}
 
-inline int pthread_cond_timedwait(cond_handle_t* __cond, mutex_handle_t* __mutex, const struct timespec* __timeout) { 
-    if (__timeout != NULL) {
-        struct timeval now;
-        gettimeofday(&now, NULL);
-        WaitForSingleObject(*__cond, (__timeout->tv_sec - now.tv_sec) * 1000 + __timeout->tv_nsec / 1000000);
-    }
-    else {
-        WaitForSingleObject(*__cond, INFINITE);
-    }
-    return 0; 
-}
+int pthread_cond_timedwait(cond_handle_t* __cond, mutex_handle_t* __mutex, const struct timespec* __timeout);
 
 #else /* Use pthread library */
 

@@ -10,6 +10,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "airplay2-win", "airplay2-wi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "airplay2", "airplay2\airplay2.vcxproj", "{54FE79F9-FA82-4BFD-99A2-5CE9DEB1D356}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "airplay2dll", "airplay2dll\airplay2dll.vcxproj", "{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{54FE79F9-FA82-4BFD-99A2-5CE9DEB1D356} = {54FE79F9-FA82-4BFD-99A2-5CE9DEB1D356}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "airplay-dll-demo", "airplay-dll-demo\airplay-dll-demo.vcxproj", "{C3752775-FD35-4C0F-8BA1-803485A47FB2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3} = {05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dnssd", "dnssd\dnssd.vcxproj", "{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -34,6 +46,30 @@ Global
 		{54FE79F9-FA82-4BFD-99A2-5CE9DEB1D356}.Release|x64.Build.0 = Release|x64
 		{54FE79F9-FA82-4BFD-99A2-5CE9DEB1D356}.Release|x86.ActiveCfg = Release|Win32
 		{54FE79F9-FA82-4BFD-99A2-5CE9DEB1D356}.Release|x86.Build.0 = Release|Win32
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Debug|x64.ActiveCfg = Debug|x64
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Debug|x64.Build.0 = Debug|x64
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Debug|x86.ActiveCfg = Debug|Win32
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Debug|x86.Build.0 = Debug|Win32
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Release|x64.ActiveCfg = Release|x64
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Release|x64.Build.0 = Release|x64
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Release|x86.ActiveCfg = Release|Win32
+		{05D43605-FEB8-4D46-8CA8-A43DFCB53EA3}.Release|x86.Build.0 = Release|Win32
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Debug|x64.ActiveCfg = Debug|x64
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Debug|x64.Build.0 = Debug|x64
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Debug|x86.ActiveCfg = Debug|Win32
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Debug|x86.Build.0 = Debug|Win32
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Release|x64.ActiveCfg = Release|x64
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Release|x64.Build.0 = Release|x64
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Release|x86.ActiveCfg = Release|Win32
+		{C3752775-FD35-4C0F-8BA1-803485A47FB2}.Release|x86.Build.0 = Release|Win32
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Debug|x64.ActiveCfg = Debug|x64
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Debug|x64.Build.0 = Debug|x64
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Debug|x86.ActiveCfg = Debug|Win32
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Debug|x86.Build.0 = Debug|Win32
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Release|x64.ActiveCfg = Release|x64
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Release|x64.Build.0 = Release|x64
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Release|x86.ActiveCfg = Release|Win32
+		{4374AC88-57B1-4C61-BE60-8DCE36B8BC36}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

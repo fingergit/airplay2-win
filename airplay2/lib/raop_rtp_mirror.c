@@ -186,7 +186,7 @@ raop_rtp_mirror_thread_time(void *arg)
         ret = select(nfds, &rfds, NULL, NULL, &tv);
         if (ret == 0) {
             /* Timeout happened */
-            sleep(1);
+            sleepms(1000);
             continue;
         }
 

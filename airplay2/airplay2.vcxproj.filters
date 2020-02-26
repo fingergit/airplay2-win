@@ -1535,6 +1535,9 @@
     <ClCompile Include="lib\base64.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="compat.c">
+      <Filter>airplay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="lib\crypto\CMakeLists.txt">

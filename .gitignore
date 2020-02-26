@@ -351,3 +351,9 @@ MigrationBackup/
 /airplay2-win/demo.h264
 /airplay2-win/demo.len
 /airplay2-win/demo.source
+/airplay-dll-demo/._demo-audio.pcm
+/airplay-dll-demo/demo-audio.aac
+/airplay-dll-demo/demo-audio.keyiv
+/airplay-dll-demo/demo-audio.pcm
+/airplay-dll-demo/demo-audio.source
+/airplay-dll-demo/demo-audio.wav

@@ -421,6 +421,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="airplay2.cpp" />
+    <ClCompile Include="compat.c" />
     <ClCompile Include="lib\aes2.c" />
     <ClCompile Include="lib\aes_ctr.c" />
     <ClCompile Include="lib\airplay.c" />

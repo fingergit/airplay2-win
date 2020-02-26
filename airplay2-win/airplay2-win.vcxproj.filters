@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="VideoSource">
+      <UniqueIdentifier>{e287efa5-9f7e-4343-ab36-98ecc0193494}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="airplay2-win.cpp">
@@ -21,5 +24,43 @@
     <ClCompile Include="main.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="VideoSource\VideoSource.cpp">
+      <Filter>VideoSource</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoSource\utils\xdw_list.c">
+      <Filter>VideoSource</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoSource\utils\xdw_lock.c">
+      <Filter>VideoSource</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoSource\utils\xdw_socket_ipc.c">
+      <Filter>VideoSource</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="VideoSource\videosource.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSource\utils\memalign.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSource\utils\sockets.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSource\utils\threads.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSource\utils\xdw_list.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSource\utils\xdw_lock.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSource\utils\xdw_socket_ipc.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSource\utils\xdw_std.h">
+      <Filter>VideoSource</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
