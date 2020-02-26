@@ -521,7 +521,7 @@ raop_rtp_thread_udp(void *arg)
                 /* Decode all frames in queue */
                 while ((audiobuf = raop_buffer_dequeue(raop_rtp->buffer, &audiobuflen, &pts, no_resend, &sample_rate, &channels, &bits_per_sample))) {
                     pcm_data_struct pcm_data;
-                    pcm_data.data_len = 960;
+                    pcm_data.data_len = audiobuflen;
                     pcm_data.data = audiobuf;
                     pcm_data.pts = pts;
                     pcm_data.sample_rate = sample_rate;

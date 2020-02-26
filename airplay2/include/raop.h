@@ -36,6 +36,8 @@ typedef void (*raop_log_callback_t)(void *cls, int level, const char *msg);
 struct raop_callbacks_s {
 	void* cls;
 
+	void (*connected)(void* cls);
+	void (*disconnected)(void* cls);
 	void  (*audio_process)(void *cls, pcm_data_struct *data);
     void  (*video_process)(void *cls, h264_decode_struct *data);
 

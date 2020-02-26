@@ -172,6 +172,24 @@ raop_rtp_mirror_thread_time(void *arg)
         int sendlen = sendto(raop_rtp_mirror->mirror_time_sock, (char *)time, sizeof(time), 0, (struct sockaddr *) &raop_rtp_mirror->remote_saddr, raop_rtp_mirror->remote_saddr_len);
         logger_log(raop_rtp_mirror->logger, LOGGER_DEBUG, "raop_rtp_mirror_thread_time sendlen = %d", sendlen);
 
+        fd_set rfds;
+        struct timeval tv;
+        int nfds, ret;
+        /* Set timeout value to 5ms */
+        tv.tv_sec = 0;
+        tv.tv_usec = 5000;
+
+        /* Get the correct nfds value and set rfds */
+        FD_ZERO(&rfds);
+        FD_SET(raop_rtp_mirror->mirror_time_sock, &rfds);
+        nfds = raop_rtp_mirror->mirror_time_sock + 1;
+        ret = select(nfds, &rfds, NULL, NULL, &tv);
+        if (ret == 0) {
+            /* Timeout happened */
+            sleep(1);
+            continue;
+        }
+
         saddrlen = sizeof(saddr);
         packetlen = recvfrom(raop_rtp_mirror->mirror_time_sock, (char *)packet, sizeof(packet), 0,
                              (struct sockaddr *)&saddr, &saddrlen);
@@ -193,12 +211,16 @@ raop_rtp_mirror_thread_time(void *arg)
         } else {
             struct timeval now;
             struct timespec outtime;
+#ifndef WIN32
             MUTEX_LOCK(raop_rtp_mirror->time_mutex);
+#endif // !WIN32
             gettimeofday(&now, NULL);
             outtime.tv_sec = now.tv_sec + 3;
             outtime.tv_nsec = now.tv_usec * 1000;
             int ret = pthread_cond_timedwait(&raop_rtp_mirror->time_cond, &raop_rtp_mirror->time_mutex, &outtime);
+#ifndef WIN32
             MUTEX_UNLOCK(raop_rtp_mirror->time_mutex);
+#endif // !WIN32
             //sleepms(3000);
         }
     }
@@ -508,6 +530,10 @@ raop_rtp_start_mirror(raop_rtp_mirror_t *raop_rtp_mirror, int use_udp, unsigned 
     raop_rtp_mirror->running = 1;
     raop_rtp_mirror->joined = 0;
 
+    if (raop_rtp_mirror->callbacks.connected != NULL) {
+        raop_rtp_mirror->callbacks.connected(raop_rtp_mirror->callbacks.cls);
+    }
+
     THREAD_CREATE(raop_rtp_mirror->thread_mirror, raop_rtp_mirror_thread, raop_rtp_mirror);
     THREAD_CREATE(raop_rtp_mirror->thread_time, raop_rtp_mirror_thread_time, raop_rtp_mirror);
     MUTEX_UNLOCK(raop_rtp_mirror->run_mutex);
@@ -529,9 +555,13 @@ void raop_rtp_mirror_stop(raop_rtp_mirror_t *raop_rtp_mirror) {
     /* Join the thread */
     THREAD_JOIN(raop_rtp_mirror->thread_mirror);
 
+#ifndef WIN32
     MUTEX_LOCK(raop_rtp_mirror->time_mutex);
+#endif // !WIN32
     COND_SIGNAL(raop_rtp_mirror->time_cond);
+#ifndef WIN32
     MUTEX_UNLOCK(raop_rtp_mirror->time_mutex);
+#endif // !WIN32
 
     THREAD_JOIN(raop_rtp_mirror->thread_time);
     if (raop_rtp_mirror->mirror_data_sock != -1) closesocket(raop_rtp_mirror->mirror_data_sock);
@@ -541,6 +571,10 @@ void raop_rtp_mirror_stop(raop_rtp_mirror_t *raop_rtp_mirror) {
     MUTEX_LOCK(raop_rtp_mirror->run_mutex);
     raop_rtp_mirror->joined = 1;
     MUTEX_UNLOCK(raop_rtp_mirror->run_mutex);
+
+    if (raop_rtp_mirror->callbacks.disconnected != NULL) {
+        raop_rtp_mirror->callbacks.disconnected(raop_rtp_mirror->callbacks.cls);
+    }
 }
 
 void raop_rtp_mirror_destroy(raop_rtp_mirror_t *raop_rtp_mirror) {
