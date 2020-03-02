@@ -189,17 +189,18 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response)
 			logger_log(conn->raop->logger, LOGGER_WARNING, "RAOP not initialized at FLUSH");
 		}
 	} else if (!strcmp(method, "TEARDOWN")) {
-		http_response_add_header(*response, "Connection", "close");
-		if (conn->raop_rtp) {
-			/* Destroy our RTP session */
-			raop_rtp_destroy(conn->raop_rtp);
-			conn->raop_rtp = NULL;
-		}
-        if (conn->raop_rtp_mirror) {
-            /* Destroy our mirror session */
-            raop_rtp_mirror_destroy(conn->raop_rtp_mirror);
-            conn->raop_rtp_mirror = NULL;
-        }
+		handler = &raop_handler_teardown;
+		//http_response_add_header(*response, "Connection", "close");
+		//if (conn->raop_rtp) {
+		//	/* Destroy our RTP session */
+		//	raop_rtp_destroy(conn->raop_rtp);
+		//	conn->raop_rtp = NULL;
+		//}
+  //      if (conn->raop_rtp_mirror) {
+  //          /* Destroy our mirror session */
+  //          raop_rtp_mirror_destroy(conn->raop_rtp_mirror);
+  //          conn->raop_rtp_mirror = NULL;
+  //      }
 	}
 	if (handler != NULL) {
 		handler(conn, request, *response, &response_data, &response_datalen);
