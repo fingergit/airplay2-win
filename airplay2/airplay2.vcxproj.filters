@@ -870,6 +870,9 @@
     <ClInclude Include="lib\base64.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="lib\airplay_handlers.h">
+      <Filter>airplay</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="airplay2.cpp">

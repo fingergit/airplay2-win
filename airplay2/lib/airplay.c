@@ -16,6 +16,8 @@
 #include "compat.h"
 //to do fairplay
 //#include "li"
+#include "pairing.h"
+#include "fairplay.h"
 
 #define MAX_SIGNATURE_LEN 512
 
@@ -34,6 +36,7 @@ struct airplay_s
 	airplay_callbacks_t callbacks;
 
 	logger_t *logger;
+	pairing_t* pairing;
 
 	httpd_t *httpd;
 	//rsakey_t *rsakey;
@@ -52,6 +55,8 @@ struct airplay_conn_s
 {
 	airplay_t *airplay;
 	raop_rtp_t *airplay_rtp;
+	fairplay_t* fairplay;
+	pairing_session_t* pairing;
 
 	unsigned char *local;
 	int locallen;
@@ -125,7 +130,7 @@ const char *eventStrings[] = { "playing", "paused", "loading", "stopped" };
 "<key>position</key>\r\n"\
 "<real>%f</real>\r\n"\
 "<key>rate</key>\r\n"\
-"<real>%d</real>\r\n"\
+"<real>%f</real>\r\n"\
 "<key>readyToPlay</key>\r\n"\
 "<true/>\r\n"\
 "<key>seekableTimeRanges</key>\r\n"\
@@ -162,7 +167,7 @@ const char *eventStrings[] = { "playing", "paused", "loading", "stopped" };
 "<key>protovers</key>\r\n"\
 "<string>1.0</string>\r\n"\
 "<key>srcvers</key>\r\n"\
-"<string>"AIRPLAY_SERVER_VERSION_STR"</string>\r\n"\
+"<string>"GLOBAL_VERSION"</string>\r\n"\
 "</dict>\r\n"\
 "</plist>\r\n"
 
@@ -182,9 +187,12 @@ const char *eventStrings[] = { "playing", "paused", "loading", "stopped" };
 #define AUTH_REALM "AirPlay"
 #define AUTH_REQUIRED "WWW-Authenticate: Digest realm=\""  AUTH_REALM  "\", nonce=\"%s\"\r\n"
 
+#include "airplay_handlers.h"
+
 static void *
 conn_init(void *opaque, unsigned char *local, int locallen, unsigned char *remote, int remotelen)
 {
+	airplay_t* airplay = opaque;
 	airplay_conn_t *conn;
 
 	conn = calloc(1, sizeof(airplay_conn_t));
@@ -192,8 +200,22 @@ conn_init(void *opaque, unsigned char *local, int locallen, unsigned char *remot
 	{
 		return NULL;
 	}
-	conn->airplay = opaque;
+	conn->airplay = airplay;
 	conn->airplay_rtp = NULL;
+
+	conn->fairplay = fairplay_init(airplay->logger);
+	//fairplay_init2();
+	if (!conn->fairplay) {
+		free(conn);
+		return NULL;
+	}
+
+	conn->pairing = pairing_session_init(airplay->pairing);
+	if (!conn->pairing) {
+		fairplay_destroy(conn->fairplay);
+		free(conn);
+		return NULL;
+	}
 
 	if (locallen==4)
 	{
@@ -243,20 +265,28 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response)
 	airplay_t *airplay = conn->airplay;
 
 	const char *method;
-	//const char *cseq;
+	const char *cseq;
 	//const char *challenge;
 	int require_auth = 0;
-	//char responseHeader[4096];
-	//char responseBody[4096];
+	char* response_data = NULL;
+	int response_datalen = 0;
 	int responseLength = 0;
 
-	const char *uri = http_request_get_url(request);
+	const char * url = http_request_get_url(request);
 	method = http_request_get_method(request);
+	cseq = http_request_get_header(request, "CSeq");
 
 	if (!method)
 	{
 		return;
 	}
+
+	*response = http_response_init("RTSP/1.0", 200, "OK");
+	if (cseq != NULL) {
+		http_response_add_header(*response, "CSeq", cseq);
+	}
+	//http_response_add_header(*response, "Apple-Jack-Status", "connected; type=analog");
+	http_response_add_header(*response, "Server", "AirTunes/220.68");
 
 	const char * contentType = http_request_get_header(request, "content-type");
 	const char * m_sessionId = http_request_get_header(request, "x-apple-session-id");
@@ -267,7 +297,7 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response)
 	int status = AIRPLAY_STATUS_OK;
 	int needAuth = 0;
 
-	logger_log(conn->airplay->logger, LOGGER_DEBUG, "%s uri=%s\n", method, uri);
+	logger_log(conn->airplay->logger, LOGGER_DEBUG, "[AirPlay] Handling request %s with URL %s", method, url);
 
 	{
 		const char *data;
@@ -276,9 +306,46 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response)
 		logger_log(conn->airplay->logger, LOGGER_DEBUG, "data len %d:%s\n", len, data);
 	}
 
-	
+	airplay_handler_t handler = NULL;
+	if (!strcmp(method, "POST") && !strcmp(url, "/pair-setup")) {
+		handler = &airplay_handler_pairsetup;
+	}
+	else if (!strcmp(method, "POST") && !strcmp(url, "/pair-verify")) {
+		handler = &airplay_handler_pairverify;
+	}
+	else if (!strcmp(method, "GET") && !strcmp(url, "/server-info")) {
+		handler = &airplay_handler_serverinfo;
+	}
+	else if (!strcmp(method, "POST") && !strcmp(url, "/play")) {
+		handler = &airplay_handler_play;
+	}
+	else if (!strcmp(method, "PUT") && !strncmp(url, "/setProperty", strlen("/setProperty"))) {
+//		handler = &raop_handler_pairsetup;
+	}
+	// POST /rate?value=1.000000 HTTP/1.1
+	else if (!strcmp(method, "POST") && !strncmp(url, "/rate", strlen("/rate"))) {
+//		handler = &raop_handler_pairsetup;
+	}
+	else if (!strcmp(method, "GET") && !strcmp(url, "/playback-info")) {
+		handler = &airplay_handler_playbackinfo;
+	}
+	else if (!strcmp(method, "POST") && !strcmp(url, "/reverse")) {
+		http_response_destroy(*response);
+		*response = http_response_init("HTTP/1.1", 101, "Switching Protocols");
+		http_response_add_header(*response, "Upgrade", "PTTH/1.0");
+		http_response_add_header(*response, "Connection", "Upgrade");
+	}
 
+	if (handler != NULL) {
+		handler(conn, request, *response, &response_data, &response_datalen);
+	}
 
+	http_response_finish(*response, response_data, response_datalen);
+	if (response_data) {
+		free(response_data);
+		response_data = NULL;
+		response_datalen = 0;
+	}
 }
 
 static void 
@@ -291,6 +358,8 @@ conn_destroy(void *ptr)
 	}
 	free(conn->local);
 	free(conn->remote);
+	pairing_session_destroy(conn->pairing);
+	fairplay_destroy(conn->fairplay);
 	free(conn);
 }
 
@@ -313,6 +382,7 @@ airplay_t *
 airplay_init(int max_clients, airplay_callbacks_t *callbacks, const char *pemkey, int *error)
 {
 	airplay_t *airplay;
+	pairing_t* pairing;
 	httpd_t *httpd;
 	httpd_t *mirror_server;
 	//rsakey_t *rsakey;
@@ -342,6 +412,11 @@ airplay_init(int max_clients, airplay_callbacks_t *callbacks, const char *pemkey
 	}
 
 	airplay->logger = logger_init();
+	pairing = pairing_init_generate();
+	if (!pairing) {
+		free(airplay);
+		return NULL;
+	}
 
 	memset(&httpd_cbs, 0, sizeof(httpd_cbs));
 	httpd_cbs.opaque = airplay;
@@ -353,6 +428,7 @@ airplay_init(int max_clients, airplay_callbacks_t *callbacks, const char *pemkey
 	httpd = httpd_init(airplay->logger, &httpd_cbs, max_clients);
 	if (!httpd)
 	{
+		pairing_destroy(pairing);
 		free(airplay);
 		return NULL;
 	}
@@ -376,6 +452,7 @@ airplay_init(int max_clients, airplay_callbacks_t *callbacks, const char *pemkey
 	//	return NULL;
 	//}
 
+	airplay->pairing = pairing;
 	airplay->httpd = httpd;
 	//airplay->rsakey = rsakey;
 
@@ -487,6 +564,7 @@ void airplay_stop(airplay_t *airplay)
 void airplay_destroy(airplay_t* airplay) {
 	if (airplay) {
 		airplay_stop(airplay);
+		pairing_destroy(airplay->pairing);
 		httpd_destroy(airplay->httpd);
 		logger_destroy(airplay->logger);
 		free(airplay);
