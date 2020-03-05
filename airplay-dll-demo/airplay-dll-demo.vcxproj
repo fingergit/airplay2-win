@@ -98,6 +98,11 @@
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalDependencies>airplay2dll.lib;SDL.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)\SDL.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll" $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -115,6 +120,11 @@
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalDependencies>airplay2dll.lib;SDL.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)\SDL.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll" $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -136,6 +146,11 @@
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalDependencies>airplay2dll.lib;SDL.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)\SDL.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll" $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -157,6 +172,11 @@
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalDependencies>airplay2dll.lib;SDL.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "$(SolutionDir)external\SDL-1.2.15\lib\$(PlatformTarget)\SDL.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll" $(OutDir)
+xcopy /y "$(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll" $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="airplay-dll-demo.cpp" />

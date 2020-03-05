@@ -3,6 +3,12 @@ Airplay2 for windows.
 
 Migrate [AirplayServer](https://github.com/KqSMea8/AirplayServer) and [dnssd](https://github.com/jevinskie/mDNSResponder) to Windows Platform.
 
+## Build
+
+- Open `airplay2-win.sln` in Visual Studio 2019.
+- Make `airplay-dll-demo` as Start Project.
+- `Ctrl + B`, Build `airplay-dll-demo`.
+
 ## Reference
 
 - [shairplay](https://github.com/juhovh/shairplay) 
