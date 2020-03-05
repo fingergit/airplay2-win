@@ -160,10 +160,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="airplay-dll-demo.cpp" />
+    <ClCompile Include="CAirServer.cpp" />
     <ClCompile Include="CAirServerCallback.cpp" />
+    <ClCompile Include="CAutoLock.cpp" />
+    <ClCompile Include="CSDLPlayer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CAirServer.h" />
     <ClInclude Include="CAirServerCallback.h" />
+    <ClInclude Include="CAutoLock.h" />
+    <ClInclude Include="CSDLPlayer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

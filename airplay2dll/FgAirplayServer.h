@@ -54,27 +54,31 @@ protected:
 	static void audio_flush(void* cls, void* session);
 	static void audio_destroy(void* cls, void* session);
 	static void video_process(void* cls, h264_decode_struct* data);
-	static void raop_log_callback(void* cls, int level, const char* msg);
+	static void log_callback(void* cls, int level, const char* msg);
+
+	static void ap_video_play(void* cls, char* url, double volume, double start_pos);
+	static void ap_video_get_play_info(void* cls, double* duration, double* position, double* rate);
 
 protected:
 	int initFFmpeg(const void* privatedata, int privatedatalen);
+	void unInitFFmpeg();
 	int decodeH264Data(SFgH264Data* data);
 
 protected:
-	FgH264DataQueue m_h264Queue;
-	IAirServerCallback* m_callback;
+	FgH264DataQueue			m_h264Queue;
+	IAirServerCallback*		m_pCallback;
 
-	dnssd_t* dnssd;
-	airplay_t* airplay;
-	raop_t* raop;
+	dnssd_t*				m_pDnsSd;
+	airplay_t*				m_pAirplay;
+	raop_t*					m_pRaop;
 
-	airplay_callbacks_t ap_cbs;
-	raop_callbacks_t raop_cbs;
+	airplay_callbacks_t		m_stAirplayCB;
+	raop_callbacks_t		m_stRaopCB;
 
-	volatile bool video_quit;
-	AVCodec* codec;
-	AVCodecContext* codecCtx;
-	bool isCodecOpened;
+	volatile bool			m_bVideoQuit;
+	AVCodec*				m_pCodec;
+	AVCodecContext*			m_pCodecCtx;
+	bool					m_bCodecOpened;
 
 
 };

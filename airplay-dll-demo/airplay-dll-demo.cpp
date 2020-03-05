@@ -4,21 +4,17 @@
 #include <iostream>
 #include "Airplay2Head.h"
 #include "CAirServerCallback.h"
+#include "SDL.h"
+#include "CSDLPlayer.h"
 
 int main()
 {
-    std::cout << "Hello World!\n";
-    CAirServerCallback* callback = new CAirServerCallback();
+    CSDLPlayer player;
+    player.init();
 
-    void* server = fgServerStart("FgAirplay", callback);
+    player.loopEvents();
 
-    while (true)
-    {
-        Sleep(1000);
-    }
-
-    if (server != NULL) {
-        fgServerStop(server);
-    }
-    delete callback;
+    /* This should never happen */
+    printf("SDL_WaitEvent error: %s\n", SDL_GetError());
+    exit(1);
 }

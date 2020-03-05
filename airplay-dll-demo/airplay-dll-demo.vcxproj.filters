@@ -21,9 +21,27 @@
     <ClCompile Include="CAirServerCallback.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="CSDLPlayer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CAutoLock.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CAirServer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CAirServerCallback.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CSDLPlayer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CAutoLock.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CAirServer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

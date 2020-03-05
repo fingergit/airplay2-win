@@ -1,21 +1,7 @@
 #pragma once
 #include <Windows.h>
-#include "Airplay2Head.h"
-#include <queue>
+#include "CSDLPlayer.h"
 
-#include "SDL.h"
-#include "SDL_thread.h"
-#undef main 
-
-typedef struct SDemoAudioFrame {
-	unsigned long long pts;
-	unsigned int dataTotal;
-	unsigned int dataLeft;
-	unsigned char* data;
-} SDemoAudioFrame;
-
-
-typedef std::queue<SDemoAudioFrame*> SDemoAudioFrameQueue;
 
 class CAirServerCallback : public IAirServerCallback
 {
@@ -24,11 +10,7 @@ public:
 	virtual ~CAirServerCallback();
 
 public:
-	void init(int width, int height);
-	void unInit();
-	void initAudio(SFgAudioFrame* data);
-	void unInitAudio();
-	static void sdlAudioCallback(void* userdata, Uint8* stream, int len);
+	void setPlayer(CSDLPlayer* pPlayer);
 
 public:
 	virtual void connected();
@@ -36,19 +18,12 @@ public:
 	virtual void outputAudio(SFgAudioFrame* data);
 	virtual void outputVideo(SFgVideoFrame* data);
 
+	virtual void videoPlay(char* url, double volume, double startPos);
+	virtual void videoGetPlayInfo(double* duration, double* position, double* rate);
+
+	virtual void log(int level, const char* msg);
+
 protected:
-	SDL_Surface* screen;
-	//SDL_VideoInfo* vi;
-	SDL_Overlay* bmp;
-	SDL_Rect rect;
-
-	SFgAudioFrame m_sAudioFmt;
-	bool m_bAudioInited;
-	SDemoAudioFrameQueue m_queueAudio;
-	HANDLE m_mutexAudio;
-
-	bool m_bDumpAudio;
-	FILE* m_fileWav;
-
+	CSDLPlayer* m_pPlayer;
 };
 

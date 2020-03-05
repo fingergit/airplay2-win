@@ -10,6 +10,8 @@ void* fgServerStart(const char serverName[AIRPLAY_NAME_LEN], IAirServerCallback*
 void fgServerStop(void* handle) {
 	if (handle != NULL) {
 		FgAirplayServer* pServer = (FgAirplayServer*)handle;
+		pServer->stop();
+
 		delete pServer;
 		pServer = NULL;
 	}

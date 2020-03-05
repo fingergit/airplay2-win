@@ -257,6 +257,8 @@ main(int argc, char *argv[])
 	int error = 0;
 	airplay = airplay_init(10, &ap_cbs, pemstr, &error);
 	airplay_start(airplay, &airplay_port, hwaddr, sizeof(hwaddr), NULL);
+	airplay_set_log_level(airplay, RAOP_LOG_DEBUG);
+	airplay_set_log_callback(airplay, &raop_log_callback, NULL);
 
 	raop = raop_init(10, &raop_cbs);
 

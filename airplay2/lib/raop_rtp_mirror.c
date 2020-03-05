@@ -59,6 +59,8 @@ struct raop_rtp_mirror_s {
     int flush;
     thread_handle_t thread_mirror;
     thread_handle_t thread_time;
+    // For thread_mirror exit unexpeced.
+    thread_handle_t thread_exit_exception;
     mutex_handle_t run_mutex;
 
     mutex_handle_t time_mutex;
@@ -229,6 +231,14 @@ raop_rtp_mirror_thread_time(void *arg)
 }
 //#define DUMP_H264
 
+static THREAD_RETVAL
+raop_exception_thread(void* arg)
+{
+    raop_rtp_mirror_t* raop_rtp_mirror = arg;
+    raop_rtp_mirror_stop(raop_rtp_mirror);
+    return 0;
+}
+
 #define RAOP_PACKET_LEN 32768
 /**
  * 镜像
@@ -245,6 +255,7 @@ raop_rtp_mirror_thread(void *arg)
     uint64_t pts = 0;
     assert(raop_rtp_mirror);
 
+    int exceptionExit = 0;
 #ifdef DUMP_H264
     // C 解密的
     FILE* file = fopen("demo.h264", "wb");
@@ -283,6 +294,7 @@ raop_rtp_mirror_thread(void *arg)
         } else if (ret == -1) {
             /* FIXME: Error happened */
             logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Error in select");
+            exceptionExit = 1;
             break;
         }
         if (stream_fd == -1 && FD_ISSET(raop_rtp_mirror->mirror_data_sock, &rfds)) {
@@ -295,6 +307,7 @@ raop_rtp_mirror_thread(void *arg)
             if (stream_fd == -1) {
                 /* FIXME: Error happened */
                 logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Error in accept %d %s", errno, strerror(errno));
+                exceptionExit = 1;
                 break;
             }
         }
@@ -304,10 +317,12 @@ raop_rtp_mirror_thread(void *arg)
             if (ret == 0) {
                 /* TCP socket closed */
                 logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "TCP socket closed");
+                exceptionExit = 1;
                 break;
             } else if (ret == -1) {
                 /* FIXME: Error happened */
                 logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Error in recv");
+                exceptionExit = 1;
                 break;
             }
             readstart += ret;
@@ -490,6 +505,15 @@ raop_rtp_mirror_thread(void *arg)
     if (stream_fd != -1) {
         closesocket(stream_fd);
     }
+    if (exceptionExit) {
+        if (raop_rtp_mirror->thread_exit_exception != NULL) {
+            logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Exiting exception thread[1]");
+            THREAD_JOIN(raop_rtp_mirror->thread_exit_exception);
+            raop_rtp_mirror->thread_exit_exception = NULL;
+            logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Exception thread exit[1]");
+        }
+        THREAD_CREATE(raop_rtp_mirror->thread_exit_exception, raop_exception_thread, raop_rtp_mirror);
+    }
     logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Exiting TCP raop_rtp_mirror_thread thread");
 #ifdef DUMP_H264
     fclose(file);
@@ -541,18 +565,21 @@ raop_rtp_start_mirror(raop_rtp_mirror_t *raop_rtp_mirror, int use_udp, unsigned 
 
 void raop_rtp_mirror_stop(raop_rtp_mirror_t *raop_rtp_mirror) {
     assert(raop_rtp_mirror);
+    logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Stopping raop rtp mirror");
 
     /* Check that we are running and thread is not
      * joined (should never be while still running) */
     MUTEX_LOCK(raop_rtp_mirror->run_mutex);
     if (!raop_rtp_mirror->running || raop_rtp_mirror->joined) {
         MUTEX_UNLOCK(raop_rtp_mirror->run_mutex);
+        logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Raop rtp mirror stopped[1]");
         return;
     }
     raop_rtp_mirror->running = 0;
     MUTEX_UNLOCK(raop_rtp_mirror->run_mutex);
 
     /* Join the thread */
+    logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Join mirror thread");
     THREAD_JOIN(raop_rtp_mirror->thread_mirror);
 
 #ifndef WIN32
@@ -563,6 +590,7 @@ void raop_rtp_mirror_stop(raop_rtp_mirror_t *raop_rtp_mirror) {
     MUTEX_UNLOCK(raop_rtp_mirror->time_mutex);
 #endif // !WIN32
 
+    logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Join mirror time thread");
     THREAD_JOIN(raop_rtp_mirror->thread_time);
     if (raop_rtp_mirror->mirror_data_sock != -1) closesocket(raop_rtp_mirror->mirror_data_sock);
     if (raop_rtp_mirror->mirror_time_sock != -1) closesocket(raop_rtp_mirror->mirror_time_sock);
@@ -575,6 +603,7 @@ void raop_rtp_mirror_stop(raop_rtp_mirror_t *raop_rtp_mirror) {
     if (raop_rtp_mirror->callbacks.disconnected != NULL) {
         raop_rtp_mirror->callbacks.disconnected(raop_rtp_mirror->callbacks.cls);
     }
+    logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Raop rtp mirror stopped");
 }
 
 void raop_rtp_mirror_destroy(raop_rtp_mirror_t *raop_rtp_mirror) {
@@ -584,6 +613,12 @@ void raop_rtp_mirror_destroy(raop_rtp_mirror_t *raop_rtp_mirror) {
         MUTEX_DESTROY(raop_rtp_mirror->time_mutex);
         COND_DESTROY(raop_rtp_mirror->time_cond);
         mirror_buffer_destroy(raop_rtp_mirror->buffer);
+        if (raop_rtp_mirror->thread_exit_exception) {
+            logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Exiting exception thread");
+            THREAD_JOIN(raop_rtp_mirror->thread_exit_exception);
+            raop_rtp_mirror->thread_exit_exception = NULL;
+            logger_log(raop_rtp_mirror->logger, LOGGER_INFO, "Exception thread exit");
+        }
     }
 }
 
