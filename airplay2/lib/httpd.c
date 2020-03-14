@@ -360,7 +360,7 @@ httpd_thread(void *arg)
 		httpd->server_fd6 = -1;
 	}
 
-	logger_log(httpd->logger, LOGGER_INFO, "Exiting HTTP thread");
+	logger_log(httpd->logger, LOGGER_INFO, "Exiting HTTP thread: %d", httpd->thread);
 
 	return 0;
 }
@@ -441,13 +441,17 @@ httpd_stop(httpd_t *httpd)
 		MUTEX_UNLOCK(httpd->run_mutex);
 		return;
 	}
+	logger_log(httpd->logger, LOGGER_INFO, "Stopping server socket..., %d", httpd->thread);
 	httpd->running = 0;
 	MUTEX_UNLOCK(httpd->run_mutex);
 
 	THREAD_JOIN(httpd->thread);
 
+	logger_log(httpd->logger, LOGGER_INFO, "Stopping server socket[joined]...");
 	MUTEX_LOCK(httpd->run_mutex);
 	httpd->joined = 1;
 	MUTEX_UNLOCK(httpd->run_mutex);
+
+	logger_log(httpd->logger, LOGGER_INFO, "Server socket stopped");
 }
 

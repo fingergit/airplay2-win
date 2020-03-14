@@ -29,6 +29,7 @@ CSDLPlayer::CSDLPlayer()
 	, m_sAudioFmt()
 	, m_rect()
 	, m_server()
+	, m_fRatio(1.0f)
 {
 	ZeroMemory(&m_sAudioFmt, sizeof(SFgAudioFrame));
 	ZeroMemory(&m_rect, sizeof(SDL_Rect));
@@ -56,6 +57,7 @@ bool CSDLPlayer::init()
 	atexit(SDL_Quit);
 
 	SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
+	SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
 
 	initVideo(600, 400);
 
@@ -86,12 +88,10 @@ void CSDLPlayer::loopEvents()
 			if (event.user.code == VIDEO_SIZE_CHANGED_CODE) {
 				unsigned int width = (unsigned int)event.user.data1;
 				unsigned int height = (unsigned int)event.user.data2;
-				{
-					if (width != m_rect.w || height != m_rect.h || m_yuv == NULL) {
-						unInitVideo();
-					}
+				if (width != m_rect.w || height != m_rect.h || m_yuv == NULL) {
+					unInitVideo();
+					initVideo(width, height);
 				}
-				initVideo(width, height);
 			}
 			break;
 		}
@@ -124,20 +124,18 @@ void CSDLPlayer::loopEvents()
 					SDL_WM_SetCaption("AirPlay Demo - Started [s - start server, q - stop server]", NULL);
 					break;
 				}
+				case SDLK_EQUALS: {
+					m_fRatio *= 2;
+					m_fRatio = m_server.setVideoScale(m_fRatio);
+					break;
+				}
+				case SDLK_MINUS: {
+					m_fRatio /= 2;
+					m_fRatio = m_server.setVideoScale(m_fRatio);
+					break;
+				}
 			}
 				break;
-		}
-
-		case SDL_MOUSEBUTTONDOWN: {
-			Uint8* keys;
-
-			keys = SDL_GetKeyState(NULL);
-			if (keys[SDLK_ESCAPE] == SDL_PRESSED) {
-				printf("Bye bye...\n");
-				exit(0);
-			}
-			printf("Mouse button pressed\n");
-			break;
 		}
 
 		case SDL_QUIT: {

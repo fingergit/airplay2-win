@@ -181,14 +181,14 @@ public:
 	{
 	public:
 		static void audio_init(void *cls, int bits, int channels, int samplerate, int isaudio);
-		static void audio_process(void* cls, pcm_data_struct* data);
+		static void audio_process(void* cls, pcm_data_struct* data, const char* remoteName, const char* remoteDeviceId);
 		static void audio_destory(void *cls);
 		static void audio_setvolume(void *cls, int volume);//1-100
 		static void audio_setmetadata(void *cls, const void *buffer, int buflen);
 		static void audio_setcoverart(void *cls, const void *buffer, int buflen);
 		static void audio_flush(void *cls);
 		static void mirroring_play(void *cls, int width, int height, const void *buffer, int buflen, int payloadtype, double timestamp);
-		static void mirroring_process(void* cls, h264_decode_struct* data);
+		static void mirroring_process(void* cls, h264_decode_struct* data, const char* remoteName, const char* remoteDeviceId);
 		static void mirroring_stop(void *cls);
 
 		static void sdl_audio_callback(void *cls, uint8_t *stream, int len);

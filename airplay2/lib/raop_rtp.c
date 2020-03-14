@@ -63,6 +63,8 @@ struct raop_rtp_s {
     /* Remote address as sockaddr */
     struct sockaddr_storage remote_saddr;
     socklen_t remote_saddr_len;
+    const char remoteName[128];
+    const char remoteDeviceId[128];
 
     /* MUTEX LOCKED VARIABLES START */
     /* These variables only edited mutex locked */
@@ -137,7 +139,8 @@ raop_rtp_parse_remote(raop_rtp_t *raop_rtp, const unsigned char *remote, int rem
 
 raop_rtp_t *
 raop_rtp_init(logger_t *logger, raop_callbacks_t *callbacks, const unsigned char *remote, int remotelen,
-               const unsigned char *aeskey, const unsigned char *aesiv, const unsigned char *ecdh_secret, unsigned short timing_rport)
+        	  const char* remoteName, const char* remoteDeviceId,
+              const unsigned char *aeskey, const unsigned char *aesiv, const unsigned char *ecdh_secret, unsigned short timing_rport)
 {
     raop_rtp_t *raop_rtp;
 
@@ -160,6 +163,14 @@ raop_rtp_init(logger_t *logger, raop_callbacks_t *callbacks, const unsigned char
     if (raop_rtp_parse_remote(raop_rtp, remote, remotelen) < 0) {
 		free(raop_rtp);
 		return NULL;
+	}
+    memset(raop_rtp->remoteName, 0, 128);
+	memset(raop_rtp->remoteDeviceId, 0, 128);
+    if (remoteName != NULL) {
+        strncpy(raop_rtp->remoteName, remoteName, min(128, strlen(remoteName)));
+    }
+	if (remoteDeviceId != NULL) {
+		strncpy(raop_rtp->remoteDeviceId, remoteDeviceId, min(128, strlen(remoteDeviceId)));
 	}
 
     raop_rtp->running = 0;
@@ -322,7 +333,7 @@ raop_rtp_process_events(raop_rtp_t *raop_rtp, void *cb_data)
     /* Call set_volume callback if changed */
     if (volume_changed) {
         if (raop_rtp->callbacks.audio_set_volume) {
-            raop_rtp->callbacks.audio_set_volume(raop_rtp->callbacks.cls, cb_data, volume);
+            raop_rtp->callbacks.audio_set_volume(raop_rtp->callbacks.cls, cb_data, volume, raop_rtp->remoteName, raop_rtp->remoteDeviceId);
         }
     }
 
@@ -330,13 +341,13 @@ raop_rtp_process_events(raop_rtp_t *raop_rtp, void *cb_data)
     if (flush != NO_FLUSH) {
         raop_buffer_flush(raop_rtp->buffer, flush);
         if (raop_rtp->callbacks.audio_flush) {
-            raop_rtp->callbacks.audio_flush(raop_rtp->callbacks.cls, cb_data);
+            raop_rtp->callbacks.audio_flush(raop_rtp->callbacks.cls, cb_data, raop_rtp->remoteName, raop_rtp->remoteDeviceId);
         }
     }
 
     if (metadata != NULL) {
         if (raop_rtp->callbacks.audio_set_metadata) {
-            raop_rtp->callbacks.audio_set_metadata(raop_rtp->callbacks.cls, cb_data, metadata, metadata_len);
+            raop_rtp->callbacks.audio_set_metadata(raop_rtp->callbacks.cls, cb_data, metadata, metadata_len, raop_rtp->remoteName, raop_rtp->remoteDeviceId);
         }
         free(metadata);
         metadata = NULL;
@@ -344,14 +355,14 @@ raop_rtp_process_events(raop_rtp_t *raop_rtp, void *cb_data)
 
     if (coverart != NULL) {
         if (raop_rtp->callbacks.audio_set_coverart) {
-            raop_rtp->callbacks.audio_set_coverart(raop_rtp->callbacks.cls, cb_data, coverart, coverart_len);
+            raop_rtp->callbacks.audio_set_coverart(raop_rtp->callbacks.cls, cb_data, coverart, coverart_len, raop_rtp->remoteName, raop_rtp->remoteDeviceId);
         }
         free(coverart);
         coverart = NULL;
     }
     if (dacp_id && active_remote_header) {
         if (raop_rtp->callbacks.audio_remote_control_id) {
-            raop_rtp->callbacks.audio_remote_control_id(raop_rtp->callbacks.cls, dacp_id, active_remote_header);
+            raop_rtp->callbacks.audio_remote_control_id(raop_rtp->callbacks.cls, dacp_id, active_remote_header, raop_rtp->remoteName, raop_rtp->remoteDeviceId);
         }
         free(dacp_id);
         free(active_remote_header);
@@ -361,7 +372,7 @@ raop_rtp_process_events(raop_rtp_t *raop_rtp, void *cb_data)
 
     if (progress_changed) {
         if (raop_rtp->callbacks.audio_set_progress) {
-            raop_rtp->callbacks.audio_set_progress(raop_rtp->callbacks.cls, cb_data, progress_start, progress_curr, progress_end);
+            raop_rtp->callbacks.audio_set_progress(raop_rtp->callbacks.cls, cb_data, progress_start, progress_curr, progress_end, raop_rtp->remoteName, raop_rtp->remoteDeviceId);
         }
     }
     return 0;
@@ -527,7 +538,7 @@ raop_rtp_thread_udp(void *arg)
                     pcm_data.sample_rate = sample_rate;
                     pcm_data.channels = channels;
                     pcm_data.bits_per_sample = bits_per_sample;
-                    raop_rtp->callbacks.audio_process(raop_rtp->callbacks.cls, &pcm_data);
+                    raop_rtp->callbacks.audio_process(raop_rtp->callbacks.cls, &pcm_data, raop_rtp->remoteName, raop_rtp->remoteDeviceId);
                 }
                 /* Handle possible resend requests */
                 if (!no_resend) {

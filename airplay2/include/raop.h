@@ -36,18 +36,18 @@ typedef void (*raop_log_callback_t)(void *cls, int level, const char *msg);
 struct raop_callbacks_s {
 	void* cls;
 
-	void (*connected)(void* cls);
-	void (*disconnected)(void* cls);
-	void  (*audio_process)(void *cls, pcm_data_struct *data);
-    void  (*video_process)(void *cls, h264_decode_struct *data);
+	void (*connected)(void* cls, const char* remoteName, const char* remoteDeviceId);
+	void (*disconnected)(void* cls, const char* remoteName, const char* remoteDeviceId);
+	void  (*audio_process)(void *cls, pcm_data_struct *data, const char* remoteName, const char* remoteDeviceId);
+    void  (*video_process)(void *cls, h264_decode_struct *data, const char* remoteName, const char* remoteDeviceId);
 
 	/* Optional but recommended callback functions */
-	void  (*audio_flush)(void *cls, void *session);
-	void  (*audio_set_volume)(void *cls, void *session, float volume);
-	void  (*audio_set_metadata)(void *cls, void *session, const void *buffer, int buflen);
-	void  (*audio_set_coverart)(void *cls, void *session, const void *buffer, int buflen);
-	void  (*audio_remote_control_id)(void *cls, const char *dacp_id, const char *active_remote_header);
-	void  (*audio_set_progress)(void *cls, void *session, unsigned int start, unsigned int curr, unsigned int end);
+	void  (*audio_flush)(void *cls, void *session, const char* remoteName, const char* remoteDeviceId);
+	void  (*audio_set_volume)(void *cls, void *session, float volume, const char* remoteName, const char* remoteDeviceId);
+	void  (*audio_set_metadata)(void *cls, void *session, const void *buffer, int buflen, const char* remoteName, const char* remoteDeviceId);
+	void  (*audio_set_coverart)(void *cls, void *session, const void *buffer, int buflen, const char* remoteName, const char* remoteDeviceId);
+	void  (*audio_remote_control_id)(void *cls, const char *dacp_id, const char *active_remote_header, const char* remoteName, const char* remoteDeviceId);
+	void  (*audio_set_progress)(void *cls, void *session, unsigned int start, unsigned int curr, unsigned int end, const char* remoteName, const char* remoteDeviceId);
 };
 typedef struct raop_callbacks_s raop_callbacks_t;
 

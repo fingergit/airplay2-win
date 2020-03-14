@@ -31,18 +31,18 @@ extern "C" {
 		void* cls;
 
 		/* Compulsory callback functions */
-		void* (*audio_init)(void *cls, int bits, int channels, int samplerate);
-		void(*audio_process)(void *cls, void *session, const void *buffer, int buflen);
-		void(*audio_destroy)(void *cls, void *session);
+// 		void* (*audio_init)(void *cls, int bits, int channels, int samplerate);
+// 		void(*audio_process)(void *cls, void *session, const void *buffer, int buflen);
+// 		void(*audio_destroy)(void *cls, void *session);
 
 		void (*video_play)(void* cls, char* url, double volume, double start_pos);
 		void (*video_get_play_info)(void* cls, double* duration, double* position, double* rate);
 
 		/* Optional but recommended callback functions */
-		void(*audio_flush)(void *cls, void *session);
-		void(*audio_set_volume)(void *cls, void *session, float volume);
-		void(*audio_set_metadata)(void *cls, void *session, const void *buffer, int buflen);
-		void(*audio_set_coverart)(void *cls, void *session, const void *buffer, int buflen);
+// 		void(*audio_flush)(void *cls, void *session);
+// 		void(*audio_set_volume)(void *cls, void *session, float volume);
+// 		void(*audio_set_metadata)(void *cls, void *session, const void *buffer, int buflen);
+// 		void(*audio_set_coverart)(void *cls, void *session, const void *buffer, int buflen);
 	};
 	typedef struct airplay_callbacks_s airplay_callbacks_t;
 

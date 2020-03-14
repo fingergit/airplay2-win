@@ -398,12 +398,12 @@ airplay_init(int max_clients, airplay_callbacks_t *callbacks, const char *pemkey
 		return NULL;
 	}
 
-	if (!callbacks->audio_init||
-		!callbacks->audio_process||
-		!callbacks->audio_destroy)
-	{
-		return NULL;
-	}
+// 	if (!callbacks->audio_init||
+// 		!callbacks->audio_process||
+// 		!callbacks->audio_destroy)
+// 	{
+// 		return NULL;
+// 	}
 
 	airplay = calloc(1, sizeof(airplay_t));
 	if (!airplay)

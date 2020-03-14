@@ -9,6 +9,8 @@
 
 int main()
 {
+    printf("Usage: \n [s] to start server\n [q] to stop\n [-] and [=] to scale video size.\n\n");
+
     CSDLPlayer player;
     player.init();
 

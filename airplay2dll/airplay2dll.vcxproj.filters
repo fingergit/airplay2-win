@@ -30,6 +30,9 @@
     <ClCompile Include="src\Airplay2Export.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\CAutoLock.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -42,6 +45,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="FgAirplayServer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CAutoLock.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

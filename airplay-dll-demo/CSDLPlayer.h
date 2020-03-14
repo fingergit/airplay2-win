@@ -57,5 +57,6 @@ public:
 	FILE* m_fileWav;
 
 	CAirServer m_server;
+	float m_fRatio;
 };
 

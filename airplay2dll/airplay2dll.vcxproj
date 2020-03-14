@@ -99,6 +99,14 @@
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)external\plist\lib\$(PlatformTarget);$(SolutionDir)external\ffmpeg\lib\$(PlatformTarget);C:\msys64\mingw32\lib\gcc\i686-w64-mingw32\9.2.0</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;winmm.lib;libplist.a;airplay2.lib;avcodec.lib;swscale.lib;avutil.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /e include\*.* $(SolutionDir)AirPlayServer\include\
+xcopy /y /e $(OutDir)$(ProjectName).dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(OutDir)$(ProjectName).lib $(SolutionDir)AirPlayServer\lib\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -117,6 +125,14 @@
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)external\plist\lib\$(PlatformTarget);$(SolutionDir)external\ffmpeg\lib\$(PlatformTarget);C:\msys64\mingw32\lib\gcc\i686-w64-mingw32\9.2.0</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;winmm.lib;libplist.a;airplay2.lib;avcodec.lib;swscale.lib;avutil.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /e include\*.* $(SolutionDir)AirPlayServer\include\
+xcopy /y /e $(OutDir)$(ProjectName).dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(OutDir)$(ProjectName).lib $(SolutionDir)AirPlayServer\lib\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -140,6 +156,14 @@
       <AdditionalDependencies>ws2_32.lib;winmm.lib;libplist.a;airplay2.lib;avcodec.lib;swscale.lib;avutil.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /e include\*.* $(SolutionDir)AirPlayServer\include\
+xcopy /y /e $(OutDir)$(ProjectName).dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(OutDir)$(ProjectName).lib $(SolutionDir)AirPlayServer\lib\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -162,13 +186,23 @@
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)external\plist\lib\$(PlatformTarget);$(SolutionDir)external\ffmpeg\lib\$(PlatformTarget);C:\msys64\mingw32\lib\gcc\i686-w64-mingw32\9.2.0</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;winmm.lib;libplist.a;airplay2.lib;avcodec.lib;swscale.lib;avutil.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /e include\*.* $(SolutionDir)AirPlayServer\include\
+xcopy /y /e $(OutDir)$(ProjectName).dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(OutDir)$(ProjectName).lib $(SolutionDir)AirPlayServer\lib\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\ffmpeg\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+xcopy /y /e $(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll $(SolutionDir)AirPlayServer\bin\$(PlatformTarget)\
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="src\Airplay2Export.cpp" />
+    <ClCompile Include="src\CAutoLock.cpp" />
     <ClCompile Include="src\FgAirplayServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CAutoLock.h" />
     <ClInclude Include="FgAirplayServer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="include\Airplay2Def.h" />

@@ -100,20 +100,20 @@ playback_info_cb()
 {
 }
 
-static void*
-audio_init(void* opaque, int bits, int channels, int samplerate)
-{
-	return NULL;
-}
+// static void*
+// audio_init(void* opaque, int bits, int channels, int samplerate)
+// {
+// 	return NULL;
+// }
 
 static void
-audio_set_volume(void* cls, void* session, float volume)
+audio_set_volume(void* cls, void* session, float volume, const char* remoteName, const char* remoteDeviceId)
 {
 	printf("Setting volume to %f\n", volume);
 }
 
 static void
-audio_set_metadata(void* cls, void* session, const void* buffer, int buflen)
+audio_set_metadata(void* cls, void* session, const void* buffer, int buflen, const char* remoteName, const char* remoteDeviceId)
 {
 	int orig = buflen;
 	FILE* file = fopen("metadata.bin", "wb");
@@ -125,7 +125,7 @@ audio_set_metadata(void* cls, void* session, const void* buffer, int buflen)
 }
 
 static void
-audio_set_coverart(void* cls, void* session, const void* buffer, int buflen)
+audio_set_coverart(void* cls, void* session, const void* buffer, int buflen, const char* remoteName, const char* remoteDeviceId)
 {
 	int orig = buflen;
 	FILE* file = fopen("coverart.jpg", "wb");
@@ -137,24 +137,24 @@ audio_set_coverart(void* cls, void* session, const void* buffer, int buflen)
 }
 
 static void
-audio_process_ap(void* cls, void* session, const void* buffer, int buflen)
+audio_process_ap(void* cls, void* session, const void* buffer, int buflen, const char* remoteName, const char* remoteDeviceId)
 {
 	printf("Got %d bytes of audio\n", buflen);
 }
 
 static void
-audio_flush(void* cls, void* session)
+audio_flush(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
 {
 }
 
 static void
-audio_destroy(void* cls, void* session)
+audio_destroy(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
 {
 	printf("Closing audio device\n");
 }
 
 static void
-video_process(void* cls, h264_decode_struct* data)
+video_process(void* cls, h264_decode_struct* data, const char* remoteName, const char* remoteDeviceId)
 {
 	printf("Receive video data.[%ul]\n", data->pts);
 }
@@ -543,7 +543,7 @@ void VideoSource::AirPlayOutputFunctions::audio_init(void *cls, int bits, int ch
 	((VideoSource *)cls)->audio_quit = false;
 }
 
-void VideoSource::AirPlayOutputFunctions::audio_process(void* cls, pcm_data_struct* data)
+void VideoSource::AirPlayOutputFunctions::audio_process(void* cls, pcm_data_struct* data, const char* remoteName, const char* remoteDeviceId)
 {
 	if (((VideoSource*)cls)->isAudioInited == 0) {
 		audio_init(cls, data->bits_per_sample, data->channels, data->sample_rate, 0);
@@ -636,7 +636,7 @@ void VideoSource::AirPlayOutputFunctions::mirroring_play(void *cls, int width, i
 	((VideoSource *)cls)->vs->init(&(((VideoSource *)cls)->xdw_decoder_q), buffer, buflen);
 }
 
-void VideoSource::AirPlayOutputFunctions::mirroring_process(void* cls, h264_decode_struct* h264data)
+void VideoSource::AirPlayOutputFunctions::mirroring_process(void* cls, h264_decode_struct* h264data, const char* remoteName, const char* remoteDeviceId)
 {
 	if (((VideoSource*)cls)->isMirrorPlaying != 1) {
 		mirroring_play(cls, 1080, 1920, h264data->data, h264data->data_len, h264data->frame_type, h264data->nTimeStamp);
@@ -775,10 +775,10 @@ void VideoSource::start_airplay()
 	memset(&raop_cbs, 0, sizeof(raop_callbacks_t));
 	raop_cbs.cls = this;
 
-	ap_cbs.audio_init = audio_init;
-	ap_cbs.audio_process = audio_process_ap;
-	ap_cbs.audio_flush = audio_flush;
-	ap_cbs.audio_destroy = audio_destroy;
+// 	ap_cbs.audio_init = audio_init;
+// 	ap_cbs.audio_process = audio_process_ap;
+// 	ap_cbs.audio_flush = audio_flush;
+// 	ap_cbs.audio_destroy = audio_destroy;
 
 	// raop_cbs.audio_init = audio_init;
 	raop_cbs.audio_set_volume = audio_set_volume;

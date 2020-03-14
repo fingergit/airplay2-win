@@ -30,6 +30,9 @@
     <ClCompile Include="CAirServer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="FgUtf8Utils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CAirServerCallback.h">
@@ -42,6 +45,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="CAirServer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FgUtf8Utils.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

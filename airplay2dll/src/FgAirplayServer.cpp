@@ -1,7 +1,15 @@
 #include "pch.h"
 #include "FgAirplayServer.h"
 #include "Airplay2Head.h"
+#include <thread>
+#include "CAutoLock.h"
 
+#ifdef WIN32
+#include   "iphlpapi.h"  
+#pragma   comment(lib,   "iphlpapi.lib   ")  
+#endif
+
+BOOL GetMacAddress(char strMac[6]);
 
 FgAirplayServer::FgAirplayServer()
 	: m_pCallback(NULL)
@@ -11,17 +19,19 @@ FgAirplayServer::FgAirplayServer()
 	, m_bVideoQuit(false)
 	, m_pCodec(NULL)
 	, m_pCodecCtx(NULL)
+	, m_pSwsCtx(NULL)
 	, m_bCodecOpened(false)
+	, m_fScaleRatio(1.0f)
 {
 	memset(&m_stAirplayCB, 0, sizeof(airplay_callbacks_t));
 	memset(&m_stRaopCB, 0, sizeof(raop_callbacks_t));
 	m_stAirplayCB.cls = this;
 	m_stRaopCB.cls = this;
 
-	m_stAirplayCB.audio_init = audio_init;
-	m_stAirplayCB.audio_process = audio_process_ap;
-	m_stAirplayCB.audio_flush = audio_flush;
-	m_stAirplayCB.audio_destroy = audio_destroy;
+// 	m_stAirplayCB.audio_init = audio_init;
+// 	m_stAirplayCB.audio_process = audio_process_ap;
+// 	m_stAirplayCB.audio_flush = audio_flush;
+// 	m_stAirplayCB.audio_destroy = audio_destroy;
 	m_stAirplayCB.video_play = ap_video_play;
 	m_stAirplayCB.video_get_play_info = ap_video_get_play_info;
 
@@ -35,24 +45,48 @@ FgAirplayServer::FgAirplayServer()
 	m_stRaopCB.audio_flush = audio_flush;
 	// m_stRaopCB.audio_destroy = audio_destroy;
 	m_stRaopCB.video_process = video_process;
+
+	memset(&m_sVideoFrameOri, 0, sizeof(SFgVideoFrame));
+	memset(&m_sVideoFrameScale, 0, sizeof(SFgVideoFrame));
+
+	m_mutexAudio = CreateMutex(NULL, FALSE, NULL);
+	m_mutexVideo = CreateMutex(NULL, FALSE, NULL);
 }
 
 FgAirplayServer::~FgAirplayServer()
 {
 	m_pCallback = NULL;
+	if (m_sVideoFrameOri.data)
+	{
+		delete[] m_sVideoFrameOri.data;
+		m_sVideoFrameOri.data = NULL;
+	}
+	if (m_sVideoFrameScale.data)
+	{
+		delete[] m_sVideoFrameScale.data;
+		m_sVideoFrameScale.data = NULL;
+	}
+
+	CloseHandle(m_mutexAudio);
+	CloseHandle(m_mutexVideo);
 }
 
-int FgAirplayServer::start(const char serverName[AIRPLAY_NAME_LEN], IAirServerCallback* callback)
+int FgAirplayServer::start(const char serverName[AIRPLAY_NAME_LEN], 
+	unsigned int raopPort, unsigned int airplayPort,
+	IAirServerCallback* callback)
 {
 	m_pCallback = callback;
 
-	unsigned short raop_port = 5000;
-	unsigned short airplay_port = 7000;
-	const char hwaddr[] = { 0x48, 0x5d, 0x60, 0x7c, 0xee, 0x22 };
+	unsigned short raop_port = raopPort;
+	unsigned short airplay_port = airplayPort;
+	char hwaddr[] = { 0x48, 0x5d, 0x60, 0x7c, 0xee, 0x22 };
 	char* pemstr = NULL;
 
 	int ret = 0;
 	do {
+
+		GetMacAddress(hwaddr);
+
 		m_pAirplay = airplay_init(10, &m_stAirplayCB, pemstr, &ret);
 		if (m_pAirplay == NULL) {
 			ret = -1;
@@ -105,9 +139,6 @@ int FgAirplayServer::start(const char serverName[AIRPLAY_NAME_LEN], IAirServerCa
 
 void FgAirplayServer::stop()
 {
-	airplay_set_log_callback(m_pAirplay, &log_callback, NULL);
-	raop_set_log_callback(m_pRaop, &log_callback, NULL);
-
 	if (m_pDnsSd) {
 		dnssd_unregister_airplay(m_pDnsSd);
 		dnssd_unregister_raop(m_pDnsSd);
@@ -117,11 +148,13 @@ void FgAirplayServer::stop()
 
 	if (m_pRaop) {
 		raop_destroy(m_pRaop);
+// 		raop_set_log_callback(m_pRaop, &log_callback, NULL);
 		m_pRaop = NULL;
 	}
 
 	if (m_pAirplay) {
 		airplay_destroy(m_pAirplay);
+// 		airplay_set_log_callback(m_pAirplay, &log_callback, NULL);
 		m_pAirplay = NULL;
 	}
 
@@ -129,7 +162,13 @@ void FgAirplayServer::stop()
 	m_pCallback = NULL;
 }
 
-void FgAirplayServer::connected(void* cls)
+float FgAirplayServer::setScale(float fRatio)
+{
+	m_fScaleRatio = min(10, max(0.1, fRatio));
+	return m_fScaleRatio;
+}
+
+void FgAirplayServer::connected(void* cls, const char* remoteName, const char* remoteDeviceId)
 {
 	FgAirplayServer* pServer = (FgAirplayServer*)cls;
 	if (!pServer)
@@ -138,11 +177,11 @@ void FgAirplayServer::connected(void* cls)
 	}
 	if (pServer->m_pCallback != NULL)
 	{
-		pServer->m_pCallback->connected();
+		pServer->m_pCallback->connected(remoteName, remoteDeviceId);
 	}
 }
 
-void FgAirplayServer::disconnected(void* cls)
+void FgAirplayServer::disconnected(void* cls, const char* remoteName, const char* remoteDeviceId)
 {
 	FgAirplayServer* pServer = (FgAirplayServer*)cls;
 	if (!pServer)
@@ -151,33 +190,34 @@ void FgAirplayServer::disconnected(void* cls)
 	}
 	if (pServer->m_pCallback != NULL)
 	{
-		pServer->m_pCallback->disconnected();
+		pServer->m_pCallback->disconnected(remoteName, remoteDeviceId);
 	}
 }
 
-void* FgAirplayServer::audio_init(void* opaque, int bits, int channels, int samplerate)
-{
-	return nullptr;
-}
+// void* FgAirplayServer::audio_init(void* opaque, int bits, int channels, int samplerate)
+// {
+// 	return nullptr;
+// }
 
-void FgAirplayServer::audio_set_volume(void* cls, void* session, float volume)
-{
-}
-
-void FgAirplayServer::audio_set_metadata(void* cls, void* session, const void* buffer, int buflen)
+void FgAirplayServer::audio_set_volume(void* cls, void* session, float volume, const char* remoteName, const char* remoteDeviceId)
 {
 }
 
-void FgAirplayServer::audio_set_coverart(void* cls, void* session, const void* buffer, int buflen)
+void FgAirplayServer::audio_set_metadata(void* cls, void* session, const void* buffer, int buflen, const char* remoteName, const char* remoteDeviceId)
 {
 }
 
-void FgAirplayServer::audio_process_ap(void* cls, void* session, const void* buffer, int buflen)
+void FgAirplayServer::audio_set_coverart(void* cls, void* session, const void* buffer, int buflen, const char* remoteName, const char* remoteDeviceId)
 {
 }
 
-void FgAirplayServer::audio_process(void* cls, pcm_data_struct* data)
+// void FgAirplayServer::audio_process_ap(void* cls, void* session, const void* buffer, int buflen)
+// {
+// }
+
+void FgAirplayServer::audio_process(void* cls, pcm_data_struct* data, const char* remoteName, const char* remoteDeviceId)
 {
+
 	FgAirplayServer* pServer = (FgAirplayServer*)cls;
 	if (!pServer)
 	{
@@ -185,6 +225,8 @@ void FgAirplayServer::audio_process(void* cls, pcm_data_struct* data)
 	}
 	if (pServer->m_pCallback != NULL)
 	{
+		CAutoLock oLock(pServer->m_mutexAudio, "audio_process");
+
 		SFgAudioFrame* frame = new SFgAudioFrame();
 		frame->bitsPerSample = data->bits_per_sample;
 		frame->channels = data->channels;
@@ -194,21 +236,21 @@ void FgAirplayServer::audio_process(void* cls, pcm_data_struct* data)
 		frame->data = new uint8_t[frame->dataLen];
 		memcpy(frame->data, data->data, frame->dataLen);
 
-		pServer->m_pCallback->outputAudio(frame);
+		pServer->m_pCallback->outputAudio(frame, remoteName, remoteDeviceId);
 		delete[] frame->data;
 		delete frame;
 	}
 }
 
-void FgAirplayServer::audio_flush(void* cls, void* session)
+void FgAirplayServer::audio_flush(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
 {
 }
 
-void FgAirplayServer::audio_destroy(void* cls, void* session)
+void FgAirplayServer::audio_destroy(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
 {
 }
 
-void FgAirplayServer::video_process(void* cls, h264_decode_struct* h264data)
+void FgAirplayServer::video_process(void* cls, h264_decode_struct* h264data, const char* remoteName, const char* remoteDeviceId)
 {
 	FgAirplayServer* pServer = (FgAirplayServer*)cls;
 	if (!pServer)
@@ -219,6 +261,8 @@ void FgAirplayServer::video_process(void* cls, h264_decode_struct* h264data)
 	{
 		return;
 	}
+
+	CAutoLock oLock(pServer->m_mutexVideo, "video_process");
 
 	SFgH264Data* pData = new SFgH264Data();
 	memset(pData, 0, sizeof(SFgH264Data));
@@ -237,7 +281,7 @@ void FgAirplayServer::video_process(void* cls, h264_decode_struct* h264data)
 		memcpy(pData->data, h264data->data, h264data->data_len);
 	}
 
-	pServer->decodeH264Data(pData);
+	pServer->decodeH264Data(pData, remoteName, remoteDeviceId);
 	delete[] pData->data;
 	delete pData;
 }
@@ -318,9 +362,14 @@ void FgAirplayServer::unInitFFmpeg()
 		avcodec_free_context(&m_pCodecCtx);
 		m_pCodecCtx = NULL;
 	}
+	if (m_pSwsCtx)
+	{
+		sws_freeContext(m_pSwsCtx);
+		m_pSwsCtx = NULL;
+	}
 }
 
-int FgAirplayServer::decodeH264Data(SFgH264Data* data) {
+int FgAirplayServer::decodeH264Data(SFgH264Data* data, const char* remoteName, const char* remoteDeviceId) {
 	int ret = 0;
 	if (!m_bCodecOpened && !data->is_key) {
 		return 0;
@@ -352,34 +401,138 @@ int FgAirplayServer::decodeH264Data(SFgH264Data* data) {
 	// Did we get a video frame?
 	if (frameFinished == 0)
 	{
-		SFgVideoFrame* pVideoFrame = new SFgVideoFrame();
-		pVideoFrame->width = pFrame->width;
-		pVideoFrame->height = pFrame->height;
-		pVideoFrame->pts = pFrame->pts;
-		pVideoFrame->isKey = pFrame->key_frame;
+		if (m_sVideoFrameOri.width != pFrame->width ||
+			m_sVideoFrameOri.height != pFrame->height) {
+			if (m_sVideoFrameOri.data)
+			{
+				delete[] m_sVideoFrameOri.data;
+				m_sVideoFrameOri.data = NULL;
+			}
+		}
+
+		m_sVideoFrameOri.width = pFrame->width;
+		m_sVideoFrameOri.height = pFrame->height;
+		m_sVideoFrameOri.pts = pFrame->pts;
+		m_sVideoFrameOri.isKey = pFrame->key_frame;
 		int ySize = pFrame->linesize[0] * pFrame->height;
 		int uSize = pFrame->linesize[1] * pFrame->height >> 1;
 		int vSize = pFrame->linesize[2] * pFrame->height >> 1;
-		pVideoFrame->dataTotalLen = ySize + uSize + vSize;
-		pVideoFrame->dataLen[0] = ySize;
-		pVideoFrame->dataLen[1] = uSize;
-		pVideoFrame->dataLen[2] = vSize;
-		pVideoFrame->data = new uint8_t[pVideoFrame->dataTotalLen];
-		memcpy(pVideoFrame->data, pFrame->data[0], ySize);
-		memcpy(pVideoFrame->data + ySize, pFrame->data[1], uSize);
-		memcpy(pVideoFrame->data + ySize + uSize, pFrame->data[2], vSize);
-		pVideoFrame->pitch[0] = pFrame->linesize[0];
-		pVideoFrame->pitch[1] = pFrame->linesize[1];
-		pVideoFrame->pitch[2] = pFrame->linesize[2];
+		m_sVideoFrameOri.dataTotalLen = ySize + uSize + vSize;
+		m_sVideoFrameOri.dataLen[0] = ySize;
+		m_sVideoFrameOri.dataLen[1] = uSize;
+		m_sVideoFrameOri.dataLen[2] = vSize;
+		if (!m_sVideoFrameOri.data)
+		{
+			m_sVideoFrameOri.data = new uint8_t[m_sVideoFrameOri.dataTotalLen];
+		}
+		memcpy(m_sVideoFrameOri.data, pFrame->data[0], ySize);
+		memcpy(m_sVideoFrameOri.data + ySize, pFrame->data[1], uSize);
+		memcpy(m_sVideoFrameOri.data + ySize + uSize, pFrame->data[2], vSize);
+		m_sVideoFrameOri.pitch[0] = pFrame->linesize[0];
+		m_sVideoFrameOri.pitch[1] = pFrame->linesize[1];
+		m_sVideoFrameOri.pitch[2] = pFrame->linesize[2];
 
 		if (m_pCallback != NULL)
 		{
-			m_pCallback->outputVideo(pVideoFrame);
+			if (m_fScaleRatio < 0.9999f || m_fScaleRatio > 1.0001f) {
+				scaleH264Data(&m_sVideoFrameOri);
+				m_pCallback->outputVideo(&m_sVideoFrameScale, remoteName, remoteDeviceId);
+			}
+			else {
+				m_pCallback->outputVideo(&m_sVideoFrameOri, remoteName, remoteDeviceId);
+			}
 		}
-		delete[] pVideoFrame->data;
-		delete pVideoFrame;
 	}
 	av_frame_free(&pFrame);
 
 	return 0;
+}
+
+int FgAirplayServer::scaleH264Data(SFgVideoFrame* pSrcFrame)
+{
+	int nScreenWidth = pSrcFrame->width * m_fScaleRatio;
+	int nScreenHeight = pSrcFrame->height * m_fScaleRatio;
+	if (m_pSwsCtx && m_sVideoFrameScale.width != nScreenWidth || m_sVideoFrameScale.height != nScreenHeight)
+	{
+		sws_freeContext(m_pSwsCtx);
+		m_pSwsCtx = NULL;
+	}
+	if (!m_pSwsCtx)
+	{
+		m_pSwsCtx = sws_getContext(pSrcFrame->width, pSrcFrame->height, AV_PIX_FMT_YUV420P,
+			nScreenWidth, nScreenHeight, AV_PIX_FMT_YUV420P, SWS_BICUBIC /*SWS_POINT*/,
+			NULL, NULL, NULL);
+	}
+	if (m_sVideoFrameScale.width != nScreenWidth || m_sVideoFrameScale.height != nScreenHeight)
+	{
+		delete[] m_sVideoFrameScale.data;
+		m_sVideoFrameScale.data = NULL;
+	}
+
+	m_sVideoFrameScale.width = nScreenWidth;
+	m_sVideoFrameScale.height = nScreenHeight;
+	m_sVideoFrameScale.pts = pSrcFrame->pts;
+	m_sVideoFrameScale.isKey = pSrcFrame->isKey;
+	m_sVideoFrameScale.pitch[0] = ((nScreenWidth + 15) >> 4) << 4;
+	m_sVideoFrameScale.pitch[1] = (((nScreenWidth >> 1) + 15) >> 4) << 4;
+	m_sVideoFrameScale.pitch[2] = m_sVideoFrameScale.pitch[1];
+
+	int ySize = m_sVideoFrameScale.pitch[0] * nScreenHeight;
+	int uSize = m_sVideoFrameScale.pitch[1] * nScreenHeight >> 1;
+	int vSize = m_sVideoFrameScale.pitch[2] * nScreenHeight >> 1;
+	m_sVideoFrameScale.dataTotalLen = ySize + uSize + vSize;
+	m_sVideoFrameScale.dataLen[0] = ySize;
+	m_sVideoFrameScale.dataLen[1] = uSize;
+	m_sVideoFrameScale.dataLen[2] = vSize;
+	if (!m_sVideoFrameScale.data) {
+		m_sVideoFrameScale.data = new uint8_t[m_sVideoFrameScale.dataTotalLen];
+	}
+
+	const uint8_t* srcSlice[3] = { pSrcFrame->data, pSrcFrame->data+ pSrcFrame->dataLen[0], pSrcFrame->data + pSrcFrame->dataLen[0] + pSrcFrame->dataLen[1] };
+	const uint8_t* dst[3] = { m_sVideoFrameScale.data, 
+		m_sVideoFrameScale.data + m_sVideoFrameScale.dataLen[0], 
+		m_sVideoFrameScale.data + m_sVideoFrameScale.dataLen[0] + m_sVideoFrameScale.dataLen[1] };
+	sws_scale(m_pSwsCtx, (const uint8_t* const*)srcSlice, (const int*)pSrcFrame->pitch, 0,
+		pSrcFrame->height, (uint8_t* const*)dst, (const int*)m_sVideoFrameScale.pitch);
+
+	return 0;
+}
+
+BOOL GetMacAddress(char strMac[6])
+{
+	PIP_ADAPTER_INFO pAdapterInfo;
+	DWORD AdapterInfoSize;
+	DWORD Err;
+	AdapterInfoSize = 0;
+	Err = GetAdaptersInfo(NULL, &AdapterInfoSize);
+	if ((Err != 0) && (Err != ERROR_BUFFER_OVERFLOW)) {
+		printf("获得网卡信息失败!");
+		return   FALSE;
+	}
+	//   分配网卡信息内存  
+	pAdapterInfo = (PIP_ADAPTER_INFO)GlobalAlloc(GPTR, AdapterInfoSize);
+	if (pAdapterInfo == NULL) {
+		printf("分配网卡信息内存失败");
+		return   FALSE;
+	}
+	if (GetAdaptersInfo(pAdapterInfo, &AdapterInfoSize) != 0) {
+		printf("获得网卡信息失败!\n");
+		GlobalFree(pAdapterInfo);
+		return   FALSE;
+	}
+	for (int i = 0; i < 6; i++)
+	{
+		strMac[i] = pAdapterInfo->Address[i];
+	}
+// 	strMac[0] = pAdapterInfo->Address[0];
+// 	sprintf_s(strMac, 7, "%02X%02X%02X%02X%02X%02X",
+// 		pAdapterInfo->Address[0],
+// 		pAdapterInfo->Address[1],
+// 		pAdapterInfo->Address[2],
+// 		pAdapterInfo->Address[3],
+// 		pAdapterInfo->Address[4],
+// 		pAdapterInfo->Address[5]);
+
+	GlobalFree(pAdapterInfo);
+	return   TRUE;
 }

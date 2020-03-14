@@ -239,10 +239,10 @@ main(int argc, char *argv[])
 	//ap_cbs.scrub_get_cb = &scrub_get_cb;
 	//ap_cbs.scrub_set_cb = &scrub_set_cb;
 	//ap_cbs.playback_info_cb = &playback_info_cb;
-	ap_cbs.audio_init = audio_init;
-	ap_cbs.audio_process = audio_process_ap;
-	ap_cbs.audio_flush = audio_flush;
-	ap_cbs.audio_destroy = audio_destroy;
+// 	ap_cbs.audio_init = audio_init;
+// 	ap_cbs.audio_process = audio_process_ap;
+// 	ap_cbs.audio_flush = audio_flush;
+// 	ap_cbs.audio_destroy = audio_destroy;
 
 	// raop_cbs.audio_init = audio_init;
 	raop_cbs.audio_set_volume = audio_set_volume;
