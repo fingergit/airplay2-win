@@ -443,6 +443,17 @@ httpd_stop(httpd_t *httpd)
 	}
 	logger_log(httpd->logger, LOGGER_INFO, "Stopping server socket..., %d", httpd->thread);
 	httpd->running = 0;
+
+	if (httpd->server_fd4 != -1) {
+		shutdown(httpd->server_fd4, SHUT_RDWR);
+		closesocket(httpd->server_fd4);
+		httpd->server_fd4 = -1;
+	}
+	if (httpd->server_fd6 != -1) {
+		shutdown(httpd->server_fd6, SHUT_RDWR);
+		closesocket(httpd->server_fd6);
+		httpd->server_fd6 = -1;
+	}
 	MUTEX_UNLOCK(httpd->run_mutex);
 
 	THREAD_JOIN(httpd->thread);
