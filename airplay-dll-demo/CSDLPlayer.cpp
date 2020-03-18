@@ -4,19 +4,19 @@
 
 /* This function may run in a separate event thread */
 int FilterEvents(const SDL_Event* event) {
-	static int boycott = 1;
-
-	/* This quit event signals the closing of the window */
-	if ((event->type == SDL_QUIT) && boycott) {
-		printf("Quit event filtered out -- try again.\n");
-		boycott = 0;
-		return(0);
-	}
-	if (event->type == SDL_MOUSEMOTION) {
-		printf("Mouse moved to (%d,%d)\n",
-			event->motion.x, event->motion.y);
-		return(0);    /* Drop it, we've handled it */
-	}
+// 	static int boycott = 1;
+// 
+// 	/* This quit event signals the closing of the window */
+// 	if ((event->type == SDL_QUIT) && boycott) {
+// 		printf("Quit event filtered out -- try again.\n");
+// 		boycott = 0;
+// 		return(0);
+// 	}
+// 	if (event->type == SDL_MOUSEMOTION) {
+// 		printf("Mouse moved to (%d,%d)\n",
+// 			event->motion.x, event->motion.y);
+// 		return(0);    /* Drop it, we've handled it */
+// 	}
 	return(1);
 }
 
@@ -81,6 +81,7 @@ void CSDLPlayer::loopEvents()
 {
 	SDL_Event event;
 
+	BOOL bEndLoop = FALSE;
 	/* Loop waiting for ESC+Mouse_Button */
 	while (SDL_WaitEvent(&event) >= 0) {
 		switch (event.type) {
@@ -140,9 +141,14 @@ void CSDLPlayer::loopEvents()
 
 		case SDL_QUIT: {
 			printf("Quit requested, quitting.\n");
-			exit(0);
+			m_server.stop();
+			bEndLoop = TRUE;
 			break;
 		}
+		}
+		if (bEndLoop)
+		{
+			break;
 		}
 	}
 }

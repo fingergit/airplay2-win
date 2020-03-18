@@ -9,6 +9,8 @@
 
 int main()
 {
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
     printf("Usage: \n [s] to start server\n [q] to stop\n [-] and [=] to scale video size.\n\n");
 
     CSDLPlayer player;
@@ -18,5 +20,6 @@ int main()
 
     /* This should never happen */
     printf("SDL_WaitEvent error: %s\n", SDL_GetError());
-    exit(1);
+
+    return 0;
 }

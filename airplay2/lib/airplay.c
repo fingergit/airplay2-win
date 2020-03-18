@@ -477,21 +477,6 @@ airplay_init_from_keyfile(int max_clients, airplay_callbacks_t *callbacks, const
 	return airplay;
 }
 
-void airpaly_destroy(airplay_t *airplay)
-{
-	if (airplay)
-	{
-		airplay_stop(airplay);
-		httpd_destroy(airplay->httpd);
-		httpd_destroy(airplay->mirror_server);
-		//rsakey_destroy(airplay->rsakey);
-		logger_destroy(airplay->logger);
-		free(airplay);
-
-		netutils_cleanup();
-	}
-}
-
 int
 airplay_is_running(airplay_t *airplay)
 {
@@ -564,8 +549,10 @@ void airplay_stop(airplay_t *airplay)
 void airplay_destroy(airplay_t* airplay) {
 	if (airplay) {
 		airplay_stop(airplay);
-		pairing_destroy(airplay->pairing);
+		//rsakey_destroy(airplay->rsakey);
 		httpd_destroy(airplay->httpd);
+		httpd_destroy(airplay->mirror_server);
+		pairing_destroy(airplay->pairing);
 		logger_destroy(airplay->logger);
 		free(airplay);
 
