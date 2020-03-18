@@ -354,6 +354,7 @@ int FgAirplayServer::initFFmpeg(const void* privatedata, int privatedatalen) {
 
 void FgAirplayServer::unInitFFmpeg()
 {
+	CAutoLock oLock(m_mutexVideo, "unInitFFmpeg");
 	if (m_pCodecCtx)
 	{
 		if (m_pCodecCtx->extradata) {
