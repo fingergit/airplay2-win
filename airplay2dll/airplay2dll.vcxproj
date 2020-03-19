@@ -197,12 +197,14 @@ xcopy /y /e $(SolutionDir)external\plist\lib\$(PlatformTarget)\*.dll $(SolutionD
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="FgAirplayChannel.cpp" />
     <ClCompile Include="src\Airplay2Export.cpp" />
     <ClCompile Include="src\CAutoLock.cpp" />
     <ClCompile Include="src\FgAirplayServer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CAutoLock.h" />
+    <ClInclude Include="FgAirplayChannel.h" />
     <ClInclude Include="FgAirplayServer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="include\Airplay2Def.h" />

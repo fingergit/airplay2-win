@@ -13,7 +13,7 @@ CAutoLock::CAutoLock(HANDLE mutex, const char* name)
 		}
 		else 
 		{
-			printf("Waiting for mutex timeout: %s [%d] times", name, idx + 1);
+			printf("Waiting for mutex timeout: %s [%d] times\n", name, idx + 1);
 			idx++;
 		}
 	}
