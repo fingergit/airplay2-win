@@ -16,6 +16,7 @@
 #include "raop.h"
 //#include "rsakey.h"
 //#include "utils.h"
+#include <crtdbg.h>
 
 //#define CHALLENGE "LfBLs2pkGT4yYAJrxj2K9Q=="
 //static unsigned char ipaddr[] = { 192, 168, 1, 10 };
@@ -129,13 +130,13 @@ audio_init(void *opaque, int bits, int channels, int samplerate)
 }
 
 static void
-audio_set_volume(void* cls, void* session, float volume)
+audio_set_volume(void* cls, void* session, float volume, const char* remoteName, const char* remoteDeviceId)
 {
 	printf("Setting volume to %f\n", volume);
 }
 
 static void
-audio_set_metadata(void* cls, void* session, const void* buffer, int buflen)
+audio_set_metadata(void* cls, void* session, const void* buffer, int buflen, const char* remoteName, const char* remoteDeviceId)
 {
 	int orig = buflen;
 	FILE* file = fopen("metadata.bin", "wb");
@@ -147,7 +148,7 @@ audio_set_metadata(void* cls, void* session, const void* buffer, int buflen)
 }
 
 static void
-audio_set_coverart(void* cls, void* session, const void* buffer, int buflen)
+audio_set_coverart(void* cls, void* session, const void* buffer, int buflen, const char* remoteName, const char* remoteDeviceId)
 {
 	int orig = buflen;
 	FILE* file = fopen("coverart.jpg", "wb");
@@ -159,7 +160,7 @@ audio_set_coverart(void* cls, void* session, const void* buffer, int buflen)
 }
 
 static void
-audio_process(void* cls, pcm_data_struct* data)
+audio_process(void* cls, pcm_data_struct* data, const char* remoteName, const char* remoteDeviceId)
 {
 //	ao_device *device = ptr;
 
@@ -181,12 +182,12 @@ audio_process_ap(void* cls, void* session, const void* buffer, int buflen)
 }
 
 static void
-audio_flush(void* cls, void* session)
+audio_flush(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
 {
 }
 
 static void
-audio_destroy(void* cls, void* session)
+audio_destroy(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
 {
 //	ao_device *device = ptr;
 
@@ -195,7 +196,7 @@ audio_destroy(void* cls, void* session)
 }
 
 static void
-video_process(void* cls, h264_decode_struct * data)
+video_process(void* cls, h264_decode_struct * data, const char* remoteName, const char* remoteDeviceId)
 {
 	printf("Receive video data.[%ul]\n", data->pts);
 }
@@ -209,7 +210,9 @@ raop_log_callback(void* cls, int level, const char* msg)
 int
 main(int argc, char *argv[])
 {
-        const char *name = "shairplay";
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
+	const char* name = "shairplay";
         unsigned short raop_port = 5000;
         unsigned short airplay_port = 7000;
         const char hwaddr[] = { 0x48, 0x5d, 0x60, 0x7c, 0xee, 0x22 };
@@ -274,19 +277,24 @@ main(int argc, char *argv[])
 	printf("Startup complete... Kill with Ctrl+C\n");
 
 	int running = 1;
+	int loopCount = 0;
 	while (running != 0) {
 #ifndef WIN32
 		sleep(1);
 #else
 		Sleep(1000);
 #endif
+		loopCount++;
+		if (loopCount > 10) {
+			break;
+		}
 	}
 
 	raop_stop(raop);
 	raop_destroy(raop);
 
 	airplay_stop(airplay);
-	// airplay_destroy(airplay);
+ 	airplay_destroy(airplay);
 
 	dnssd_unregister_airplay(dnssd);
 	dnssd_unregister_raop(dnssd);
